@@ -198,5 +198,10 @@ When compiling the model, the optimiser used was adam, as it requires less memor
 We also need to write a data generator function to include all the necessary parameters for the model training process. We need to generate two inputs: x1 and x2 and one output: y. We need to pass the two inputs to different models and process it as per above model structure. Next step is to compile a model and run it for a predefined set of epochs first. We tried it on the dev datasets first and it worked fine so we did the model training on trainset.
 
 ### Results
-The models in this project were scored using BLEU-1, BLEU-2, BLEU-3, and BLEU-4
-scores.
+The models in this project were scored using BLEU-1, BLEU-2, BLEU-3, and BLEU-4 scores.
+
+Overall BLEU score: 0.29
+BLEU-1: 0.523903
+BLEU-2: 0.300046
+BLEU-3: 0.211960
+BLEU-4: 0.104169
