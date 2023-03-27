@@ -190,7 +190,7 @@ When compiling the model, the optimiser used was adam, as it requires less memor
 ![output 1](/img/posts/image-captioning/output1.png)
 <span class="caption text-muted">Output 1. Model Summary</span>
 
-![figure 1](/img/posts/image-captioning/vgg15_model.png)
+![figure 1](/img/posts/image-captioning/vgg16_model.png)
 <span class="caption text-muted">Figure 1. VGG16 Model Architecture</span>
 
 ##### Model training and Prediction
