@@ -7,21 +7,21 @@ background: '/img/posts/image-captioning/img-capt.webp'
 
 # Image Captioning
 
-#### Project Objectives
+### Project Objectives
 Image captioning is a challenging problem in the deep learning domain however several research papers and Kaggle competitions have tried to address this problem in recent years and tested out various approaches. One of the key use cases of the image captioning solution would be to do a sentence-based image search or even build AI powered applications for the visually impaired.
 
 The aim of this project is to build a model which will take images as input and generate a short description of the image. To achieve this, an image captioning model was built. This model consists of a feature extractor model (for the images) and a sequenced-based model (to generate captions).
 
-#### Dataset
+### Dataset
 This project used the Flickr 8k dataset (“Flickr 8k Dataset,” n.d.) to train the model and to relate the images and the words for generating the captions. It contains 8,092 images which each have 5 captions describing the image.
 Having multiple descriptions for each image helps deal with variation, as the same event/situation/entity can be described in various ways.
 
-#### Models
+### Models
 To solve the image captioning problem, I experimented on a combination of 2 models:
 * Image Encoder (feature extractor for the images)
 * Language Model (sequence model to generate captions)
 
-Image Features Extraction:
+##### Image Features Extraction:
 The network built is a combination of encoder and decoder, with CNN being used as the encoding layer. The CNN layer extracts the features from the images and is connected to a Long short-term memory (LSTM) network, a type of Recurrent Neural Network (RNN). I tested out the VGG16 image encoding model in this project.
 VGG16 requires the images to be converted to 224x224 size, the images are then converted to numpy arrays ready for pre-processing, and the top layers of the model were removed.
 ```python
@@ -63,7 +63,7 @@ pickle.dump(features, open(os.path.join(DIR, 'vgg16_features.pkl'), 'wb'))
 features = pickle.load(open(os.path.join(DIR, 'vgg16_features.pkl'), 'rb'))
 ```
 
-Pre-processing text/Captions:
+##### Pre-processing text/Captions:
 Text captions also need to be cleaned and pre-processed before training the model. First, we need to create a dictionary to store all the image names as keys and captions as values. Once that’s done, we can cleanse the captions by converting them to lower texts, removing extra whitespaces and removing symbols etc. We also need to add the ‘Start seq’ and ‘End Seq’ on each line.
 
 ```python
@@ -184,7 +184,7 @@ def data_generator(dataset, caption_dict, features, tokenizer, max_length, vocab
                 n = 0
 ```
 
-Model Structure:
+##### Model Structure:
 The model structure for experiment 3 is shown below in Output 1 and Figure 1. The output from the pre-trained CNN model (VGG16) is input into this model. The input shape is given as (4096,), as this is the output shape from the VGG16 model. Dropout layers were used to help avoid over fitting. The first activation function used is the Rectified Linear Unit function (ReLU), the benefits of using this function is that it helps prevent exponential growth in computation while training models. Embedding and LSTM layers were also used in this model (for the same reasons as mentioned in experiment 1 and 2). Softmax was used as the activation function on the final fully connected layer, as the model is being used for categorical predictions. Finally, the feature extractor component, sequence component and decoder component were combined.
 When compiling the model, the optimiser used was adam, as it requires less memory and is efficient when working with large amounts of data. Although the models will mainly be assessed by the BLEU scores, accuracy was used when training the model as an additional way to assess the model’s performance. Since this task was a multi-class classification task, categorical cross-entropy was deemed as the most appropriate loss function.
 
@@ -193,3 +193,10 @@ When compiling the model, the optimiser used was adam, as it requires less memor
 
 ![figure 1](/img/posts/image-captioning/vgg15_model.png)
 <span class="caption text-muted">Figure 1. VGG16 Model Architecture</span>
+
+##### Model training and Prediction
+We also need to write a data generator function to include all the necessary parameters for the model training process. We need to generate two inputs: x1 and x2 and one output: y. We need to pass the two inputs to different models and process it as per above model structure. Next step is to compile a model and run it for a predefined set of epochs first. We tried it on the dev datasets first and it worked fine so we did the model training on trainset.
+
+### Results
+The models in this project were scored using BLEU-1, BLEU-2, BLEU-3, and BLEU-4
+scores.
