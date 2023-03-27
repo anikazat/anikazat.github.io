@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Image Captioning"
-subtitle: "Build a model that will generate a short description of an image"
+subtitle: "Building a model that will generate a short description of an image"
 background: '/img/posts/image-captioning/img-capt.webp'
 ---
 
@@ -34,7 +34,9 @@ model = Model(inputs=model.inputs, outputs=model.layers[-2].output)
 # View model summary
 model.summary()
 ```
+
 A loop function is created to call the image features extraction function to loop over all the images, then all the encoded train/test/dev images are saved as pickle files.
+
 ```python
 # Extract features from the images in Flicker8k_Dataset folder and add to dictionary
 features = {}
@@ -60,5 +62,128 @@ pickle.dump(features, open(os.path.join(DIR, 'vgg16_features.pkl'), 'wb'))
 
 features = pickle.load(open(os.path.join(DIR, 'vgg16_features.pkl'), 'rb'))
 ```
+
 Pre-processing text/Captions:
 Text captions also need to be cleaned and pre-processed before training the model. First, we need to create a dictionary to store all the image names as keys and captions as values. Once that’s done, we can cleanse the captions by converting them to lower texts, removing extra whitespaces and removing symbols etc. We also need to add the ‘Start seq’ and ‘End Seq’ on each line.
+
+```python
+def caption_dictionary(token_txt):
+    captions = {}
+    for line in token_txt.split('\n'):
+        if len(line) < 1:
+            continue
+        x = line.split()
+        image_id = x[0].split('.')[0] # Remove caption number from image_id
+        caption = ' '.join(x[1:])
+        if image_id not in captions.keys():
+            captions[image_id] = []
+        captions[image_id].append(caption)
+    return(captions)
+
+token_txt = open("Flickr8k_text/Flickr8k.token.txt", "r").read()
+
+caption_dict = caption_dictionary(token_txt)
+```
+
+```python
+# Function to perform chosen text cleaning
+def clean_captions(caption_dict):
+    for key, captions in caption_dict.items():
+        for i in range(len(captions)):
+            caption = captions[i]
+            # Text cleaning
+            caption = caption.lower()
+            caption = re.sub(r"[^a-zA-Z]+", " ", caption)
+            caption = re.sub(" +", " ", caption)
+            caption = re.sub("\s+", " ", caption)
+            caption = 'startseq ' + " ".join([word for word in caption.split() if len(word)>1]) + ' endseq'
+            captions[i] = caption
+
+clean_captions(caption_dict)
+```
+I also created a function to create dictionaries for train set, testset and devset and saved them as pickle files. It will make model training easier. Next Step is to create a unique vocabulary list to store all the using captions that we just created in the previous step, and then we need to tokenize the vocabulary words. Once we have the unique tokenized words, we can create word to index and index to word dictionaries, which is very crucial for the next step: word embedding. We also need to calculate the max length of each caption to avoid out of index range errors.
+
+```python
+# Create list to contain all captions in caption_dict
+caption_list = []
+for key in caption_dict:
+    for caption in caption_dict[key]:
+        caption_list.append(caption)
+
+# Tokenizer
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(caption_list)
+
+# Get vocab_size
+vocab_size = len(tokenizer.word_index) + 1
+
+# Get max_length
+max_length = max(len(caption.split()) for caption in caption_list)
+```
+
+```python
+# Function to load, open, and read files
+def load_file(filename):
+	file = open(filename, 'r')
+	text = file.read()
+	file.close()
+	return text
+
+# Function used to load train/test sets 
+def load_set(filename):
+	txt_file = load_file(filename)
+	dataset = list()
+	for line in txt_file.split('\n'):
+		if len(line) < 1:
+			continue
+		identifier = line.split('.')[0]
+		dataset.append(identifier)
+	return set(dataset)
+```
+
+```python
+text_folder_path = "/content/gdrive/MyDrive/DL_ASG_3/Flickr8k_text"
+trainImages_path = text_folder_path + "/Flickr_8k.trainImages.txt"
+testImages_path = text_folder_path + "/Flickr_8k.testImages.txt"
+
+train_image_list = open(trainImages_path, 'r', encoding = 'utf-8').read().split("\n")
+test_image_list =open(testImages_path, 'r', encoding = 'utf-8').read().split("\n")
+
+train = load_set(trainImages_path)
+test_test = load_set(testImages_path)
+```
+
+```python
+# Function for data generator
+def data_generator(dataset, caption_dict, features, tokenizer, max_length, vocab_size, batch_size):
+    X1, X2, y = list(), list(), list()
+    n = 0
+    while 1:
+        for key in dataset:
+            n += 1
+            captions = caption_dict[key]
+            for caption in captions:
+                # Encode seq
+                seq = tokenizer.texts_to_sequences([caption])[0]
+                # Split seq
+                for i in range(1, len(seq)):
+                    # Input/Output split
+                    in_seq, out_seq = seq[:i], seq[i]
+                    # Pad input seq
+                    in_seq = pad_sequences([in_seq], maxlen=max_length)[0]
+                    # Encode output seq
+                    out_seq = to_categorical([out_seq], num_classes=vocab_size)[0]
+                    
+                    X1.append(features[key][0])
+                    X2.append(in_seq)
+                    y.append(out_seq)
+            if n == batch_size:
+                X1, X2, y = np.array(X1), np.array(X2), np.array(y)
+                yield [X1, X2], y
+                X1, X2, y = list(), list(), list()
+                n = 0
+```
+
+Model Structure:
+The model structure for experiment 3 is shown below in Output 1 and Figure 1. The output from the pre-trained CNN model (VGG16) is input into this model. The input shape is given as (4096,), as this is the output shape from the VGG16 model. Dropout layers were used to help avoid over fitting. The first activation function used is the Rectified Linear Unit function (ReLU), the benefits of using this function is that it helps prevent exponential growth in computation while training models. Embedding and LSTM layers were also used in this model (for the same reasons as mentioned in experiment 1 and 2). Softmax was used as the activation function on the final fully connected layer, as the model is being used for categorical predictions. Finally, the feature extractor component, sequence component and decoder component were combined.
+When compiling the model, the optimiser used was adam, as it requires less memory and is efficient when working with large amounts of data. Although the models will mainly be assessed by the BLEU scores, accuracy was used when training the model as an additional way to assess the model’s performance. Since this task was a multi-class classification task, categorical cross-entropy was deemed as the most appropriate loss function.
