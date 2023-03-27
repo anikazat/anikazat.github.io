@@ -187,3 +187,9 @@ def data_generator(dataset, caption_dict, features, tokenizer, max_length, vocab
 Model Structure:
 The model structure for experiment 3 is shown below in Output 1 and Figure 1. The output from the pre-trained CNN model (VGG16) is input into this model. The input shape is given as (4096,), as this is the output shape from the VGG16 model. Dropout layers were used to help avoid over fitting. The first activation function used is the Rectified Linear Unit function (ReLU), the benefits of using this function is that it helps prevent exponential growth in computation while training models. Embedding and LSTM layers were also used in this model (for the same reasons as mentioned in experiment 1 and 2). Softmax was used as the activation function on the final fully connected layer, as the model is being used for categorical predictions. Finally, the feature extractor component, sequence component and decoder component were combined.
 When compiling the model, the optimiser used was adam, as it requires less memory and is efficient when working with large amounts of data. Although the models will mainly be assessed by the BLEU scores, accuracy was used when training the model as an additional way to assess the model’s performance. Since this task was a multi-class classification task, categorical cross-entropy was deemed as the most appropriate loss function.
+
+![output 1](/img/posts/image-captioning/output1.png)
+<span class="caption text-muted">Output 1. Model Summary</span>
+
+![figure 1](/img/posts/image-captioning/vgg15_model.png)
+<span class="caption text-muted">Figure 1. VGG16 Model Architecture</span>
