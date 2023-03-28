@@ -264,11 +264,11 @@ print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0
 ### Results
 The models in this project were scored using BLEU-1, BLEU-2, BLEU-3, and BLEU-4 scores.
 
-Overall BLEU score: 0.29
-BLEU-1: 0.523903
-BLEU-2: 0.300046
-BLEU-3: 0.211960
-BLEU-4: 0.104169
+Overall BLEU score: 0.29  
+BLEU-1: 0.523903  
+BLEU-2: 0.300046  
+BLEU-3: 0.211960  
+BLEU-4: 0.104169  
 
 ### Displaying captions generated for sample images
 ```python
@@ -289,6 +289,9 @@ def generate_caption(image_name):
     plt.imshow(image)
 
 generate_caption("1547883892_e29b3db42e.jpg")
+generate_caption("2436081047_bca044c1d3.jpg")
+generate_caption("3258874419_23fec1bdc1.jpg")
+generate_caption("2588927489_f4da2f11ec.jpg")
 ```
 
 ![figure 2](/img/posts/image-captioning/pred1.png)
