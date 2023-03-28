@@ -196,6 +196,71 @@ When compiling the model, the optimiser used was adam, as it requires less memor
 ##### Model training and Prediction
 We also need to write a data generator function to include all the necessary parameters for the model training process. We need to generate two inputs: x1 and x2 and one output: y. We need to pass the two inputs to different models and process it as per above model structure. Next step is to compile a model and run it for a predefined set of epochs first. We tried it on the dev datasets first and it worked fine so we did the model training on trainset.
 
+```python
+# train the model
+epochs = 20
+batch_size = 32
+steps = len(train) // batch_size
+
+for i in range(epochs):
+    generator = data_generator(train, caption_dict, features, tokenizer, max_length, vocab_size, batch_size)
+    model.fit(generator, epochs=1, steps_per_epoch=steps, verbose=1)
+
+# Save model to DIR
+model.save(DIR+'/vgg16_model.h5')
+```
+
+```python
+def idx_to_word(integer, tokenizer):
+    for word, index in tokenizer.word_index.items():
+        if index == integer:
+            return word
+    return None
+
+# Function to generate captions
+def predict_caption(model, image, tokenizer, max_length):
+    in_text = 'startseq'
+    for i in range(max_length):
+        # Encoding input seq
+        sequence = tokenizer.texts_to_sequences([in_text])[0]
+        # Padding the seq
+        sequence = pad_sequences([sequence], max_length)
+        # Predict next word
+        yhat = model.predict([image, sequence], verbose=0)
+        yhat = np.argmax(yhat)
+        word = idx_to_word(yhat, tokenizer)
+        if word is None:
+            break
+        in_text += " " + word
+        # Stop if end tag is reached
+        if word == 'endseq':
+            break
+      
+    return in_text
+```
+
+Make predictions on test data and evaluate using BLEU scores
+
+```python
+actual, predicted = list(), list()
+
+for key in tqdm(test_test):
+    # Actual caption
+    captions = caption_dict[key]
+    # Predict caption
+    predict_captions = predict_caption(model, features[key], tokenizer, max_length) 
+    actual_captions = [caption.split() for caption in captions]
+    predict_captions = predict_captions.split()
+    actual.append(actual_captions)
+    predicted.append(predict_captions)
+    
+# Get BLEU scores
+print("BLEU-1: %f" % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
+print("BLEU-2: %f" % corpus_bleu(actual, predicted, weights=(0.5, 0.5, 0, 0)))
+print('BLEU-3: %f' % corpus_bleu(actual, predicted, weights=(0.3, 0.3, 0.3, 0)))
+print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0.25)))
+```
+
 ### Results
 The models in this project were scored using BLEU-1, BLEU-2, BLEU-3, and BLEU-4 scores.
 
@@ -204,3 +269,36 @@ BLEU-1: 0.523903
 BLEU-2: 0.300046
 BLEU-3: 0.211960
 BLEU-4: 0.104169
+
+### Displaying captions generated for sample images
+```python
+def generate_caption(image_name):
+    # load the image
+    # image_name = "1001773457_577c3a7d70.jpg"
+    image_id = image_name.split('.')[0]
+    img_path = os.path.join(DIR, "Images", image_name)
+    image = Image.open(img_path)
+    captions = caption_dict[image_id]
+    print(*'Actual captions:')
+    for caption in captions:
+        print(caption)
+    # predict the caption
+    y_pred = predict_caption(model, features[image_id], tokenizer, max_length)
+    print(*'Predicted caption:')
+    print(y_pred)
+    plt.imshow(image)
+
+generate_caption("1547883892_e29b3db42e.jpg")
+```
+
+![figure 2](/img/posts/image-captioning/pred1.png)
+<span class="caption text-muted">Figure 2. Predicted Caption 1</span>
+
+![figure 3](/img/posts/image-captioning/pred2.png)
+<span class="caption text-muted">Figure 2. Predicted Caption 2</span>
+
+![figure 4](/img/posts/image-captioning/pred3.png)
+<span class="caption text-muted">Figure 2. Predicted Caption 3</span>
+
+![figure 5](/img/posts/image-captioning/pred4.png)
+<span class="caption text-muted">Figure 2. Predicted Caption 4</span>
